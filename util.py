@@ -7,6 +7,7 @@ Authors: Gabriela Tavares,      gtavares@caltech.edu
 """
 import datetime
 import os
+import re
 
 
 def loadShakespeareSonnets():
@@ -24,7 +25,8 @@ def loadShakespeareSonnets():
                     sonnet = []
                     sonnetToAppend = False
                 continue
-            sonnet.append(line.strip().split(' '))
+            sonnet.append([re.sub(r'[^\w\s\']', '', w) for
+                           w in line.strip().split(' ')])
         sonnets.append(sonnet)
     f.close()
     return sonnets
@@ -50,7 +52,8 @@ def loadSpenserSonnets():
                     sonnet = []
                     sonnetToAppend = False
                 continue
-            sonnet.append(line.strip().split(' '))
+            sonnet.append([re.sub(r'[^\w\s\']', '', w) for
+                           w in line.strip().split(' ')])
         sonnets.append(sonnet)
     f.close()
     return sonnets
