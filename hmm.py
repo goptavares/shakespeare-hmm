@@ -14,10 +14,10 @@ class HMM:
           numStates: number of possible states.
           numObs: number of possible observations.
         """
-        self.numStates = numStates
+        self.numStates = numStates + 1  # add 1 for the initial state
         self.numObs = numObs
-        self.transitions = np.zeros((numStates, numStates))
-        self.emissions = np.zeros((numStates, numObs))
+        self.transitions = np.zeros((self.numStates, self.numStates))
+        self.emissions = np.zeros((self.numStates, numObs))
 
     def train(self, sequences):
         """
@@ -37,9 +37,11 @@ class HMM:
             O[[i],:] = O[[i],:] / sum(O[[i],:])
 
         # EM algorithm.
-        for i in xrange(10):
+        for it in xrange(10):
+            probStates = []
+            probPairs = []
             # Iterate over the data points.
-            for seq in sequences:
+            for seq, i in zip(sequences, xrange(len(sequences))):
                 # Expectation (E) step.
                 # Get alphas using forward algorithm.
                 alphas = self.forward(seq)
@@ -48,16 +50,21 @@ class HMM:
                 betas = self.backwards(seq)
 
                 # Compute marginal probabilities using alphas and betas.
-                probs = self.computeMarginalProbabilities(alphas, betas)
+                probStates[i] = self.computeMarginalProbPerState(alphas, betas)
+                probPairs[i] = self.computeMarginalProbPerStatePair(
+                    seq, alphas, betas)
 
-                # Maximization (M) step.
-                # Use marginal probabilities to update A and O matrices.
+            # Maximization (M) step.
+            # Use marginal probabilities to update A and O matrices.
+            # TODO
+
+            # Save A and O matrices.
+            self.transitions = A
+            self.emissions = O
 
             # Check for convergence in A and O matrices.
+            # TODO
 
-        # Save A and O matrices.
-        self.transitions = A
-        self.emissions = O
 
     def forward(self, seq):
         """
@@ -68,12 +75,15 @@ class HMM:
         """
         lenSeq = len(seq)
         alphas = np.zeros((self.numStates, lenSeq))
-        alphas[:,[0]] = self.transitions[:,[0]] * self.emissions[:, [seq[0]]]
+        alphas[0,:] = 0
+        alphas[:,0] = 0
+        alphas[0,0] = 1
+        alphas[1:,[1]] = self.transitions[[0],:] * self.emissions[:, [seq[0]]]
 
         # Iterate over all items in the sequence (forward) and all states.
-        for t in xrange(1, lenSeq):
-            for s in xrange(self.numStates):
-                alphas[s,t] = (sum(alphas[:,[t-1]] * self.transitions[:,[s]]) *
+        for t in xrange(2, lenSeq):
+            for s in xrange(1, self.numStates):
+                alphas[s,t] = (sum(alphas[:,[t-1]] * self.transitions[1:,[s]]) *
                                self.emissions[s, [seq[t]]])
         return alphas
 
@@ -86,16 +96,18 @@ class HMM:
         """
         lenSeq = len(seq)
         betas = np.zeros((self.numStates, lenSeq))
-        betas[:,-1] = 1
+        betas[0,:] = 0
+        betas[:,0] = 0
+        betas[1:,-1] = 1
 
         # Iterate over all items in the sequence (backwards) and all states.
         for t in xrange(lenSeq-2, -1, -1):
-            for s in xrange(self.numStates):
-                betas[s,t] = sum(betas[:,[t+1]] * self.transitions[[s],:] * 
+            for s in xrange(1, self.numStates):
+                betas[s,t] = sum(betas[:,[t+1]] * self.transitions[[s],1:] * 
                                  self.emissions[:, [seq[t+1]]])
         return betas
 
-    def computeMarginalProbabilities(self, alphas, betas):
+    def computeMarginalProbPerState(self, alphas, betas):
         """
         Args:
           alphas: matrix where each row corresponds to the alpha vector for one
@@ -103,7 +115,44 @@ class HMM:
           betas: matrix where each row corresponds to the beta vector for one
               state.
         """
-        return 0
+        probs = []
+        for j in xrange(np.shape(alphas)[1]):
+            probs[j] = []
+            s = 0
+            for a in xrange(self.numStates):
+                probs[j][a] = alphas[a,j] * betas[a,j]
+                s += probs[j][a]
+            # Normalize.
+            for a in xrange(self.numStates):
+                if s != 0:
+                    probs[j][a] = probs[j][a] / float(s)
+        return probs
+
+    def computeMarginalProbPerStatePair(self, seq, alphas, betas):
+        """
+        Args:
+          seq: list corresponding to sequence of observed outputs.
+          alphas: matrix where each row corresponds to the alpha vector for one
+              state.
+          betas: matrix where each row corresponds to the beta vector for one
+              state.
+        """
+        probs = []
+        probs[0] = []
+        for j in xrange(1, np.shape(alphas)[1]):
+            probs[j] = []
+            s = 0
+            for a in xrange(self.numStates):
+                for b in xrange(self.numStates):
+                    probs[j][a,b] = (alphas[a,j-1] * self.transitions[a,b] *
+                                       betas[b,j] * self.emissions[b,seq[j-1]])
+                    s += probs[j][a,b]
+            # Normalize.
+            for a in xrange(self.numStates):
+                for b in xrange(self.numStates):
+                    if s != 0:
+                        probs[j][a,b] = probs[j][a,b] / float(s)
+        return probs
 
     def generateSonnet(self):
         return 0
