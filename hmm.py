@@ -74,17 +74,17 @@ class HMM:
           Matrix where each row corresponds to the alpha vector for one state.
         """
         lenSeq = len(seq)
-        alphas = np.zeros((self.numStates, lenSeq))
+        alphas = np.zeros((self.numStates, lenSeq + 1))
         alphas[0,:] = 0
         alphas[:,0] = 0
         alphas[0,0] = 1
         alphas[1:,[1]] = self.transitions[[0],:] * self.emissions[:, [seq[0]]]
 
         # Iterate over all items in the sequence (forward) and all states.
-        for t in xrange(2, lenSeq):
+        for t in xrange(2, lenSeq + 1):
             for s in xrange(1, self.numStates):
-                alphas[s,t] = (sum(alphas[:,[t-1]] * self.transitions[1:,[s]]) *
-                               self.emissions[s, [seq[t]]])
+                alphas[s,t] = (sum(alphas[:,[t-1]] * self.transitions[:,[s]]) *
+                               self.emissions[s, [seq[t-1]]])
         return alphas
 
     def backwards(self, seq):
@@ -95,15 +95,15 @@ class HMM:
           Matrix where each row corresponds to the beta vector for one state.
         """
         lenSeq = len(seq)
-        betas = np.zeros((self.numStates, lenSeq))
+        betas = np.zeros((self.numStates, lenSeq + 1))
         betas[0,:] = 0
         betas[:,0] = 0
         betas[1:,-1] = 1
 
         # Iterate over all items in the sequence (backwards) and all states.
-        for t in xrange(lenSeq-2, -1, -1):
+        for t in xrange(lenSeq-1, -1, 0):
             for s in xrange(1, self.numStates):
-                betas[s,t] = sum(betas[:,[t+1]] * self.transitions[[s],1:] * 
+                betas[s,t] = sum(betas[:,[t+1]] * self.transitions[[s],:] * 
                                  self.emissions[:, [seq[t+1]]])
         return betas
 
