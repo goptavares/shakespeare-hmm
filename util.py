@@ -59,6 +59,14 @@ def loadSpenserSonnets():
     return sonnets
 
 
+def getUniqueWords(sonnets):
+    s = set()
+    for sonnet in sonnets:
+        for sentence in sonnet:
+            s |= set(sentence)
+    return(list(s))
+
+
 def writeSonnetToTxt(sonnet):
     if not os.path.isdir(os.getcwd() + '/sonnets/'):
         os.mkdir(os.getcwd() + '/sonnets/')
