@@ -9,6 +9,8 @@ import datetime
 import os
 import re
 
+from hyphen import Hyphenator
+
 
 def loadShakespeareSonnets():
     sonnets = []
@@ -63,8 +65,31 @@ def getUniqueWords(sonnets):
     s = set()
     for sonnet in sonnets:
         for sentence in sonnet:
-            s |= set(sentence)
+            s |= set([word.lower() for word in sentence])
     return(list(s))
+
+
+def getUniqueSyllables(sonnets):
+    h = Hyphenator('en_GB')
+    s = set()
+    for sonnet in sonnets:
+        for sentence in sonnet:
+            for word in sentence:
+                syllables = h.syllables(unicode(word.lower()))
+                if len(syllables) < 2:
+                    s.add(unicode(word.lower()))
+                else:
+                    s |= set(syllables)
+    return(list(s))
+
+
+def getUniqueSentences(sonnets):
+    s = []
+    for sonnet in sonnets:
+        for sentence in sonnet:
+            if not sentence in s:
+                s.append(sentence)
+    return s
 
 
 def writeSonnetToTxt(sonnet):
