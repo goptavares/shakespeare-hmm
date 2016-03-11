@@ -103,3 +103,17 @@ def writeSonnetToTxt(sonnet):
                 f.write(word + ' ')
             f.write('\n')
     f.close()
+
+
+def getRhymePairs(sonnets):
+    rhymes = []
+    for sonnet in sonnets:
+        if len(sonnet) == 14:
+            rhymes.append((sonnet[0][-1], sonnet[2][-1]))
+            rhymes.append((sonnet[1][-1], sonnet[3][-1]))
+            rhymes.append((sonnet[4][-1], sonnet[6][-1]))
+            rhymes.append((sonnet[5][-1], sonnet[7][-1]))
+            rhymes.append((sonnet[8][-1], sonnet[10][-1]))
+            rhymes.append((sonnet[9][-1], sonnet[11][-1]))
+            rhymes.append((sonnet[12][-1], sonnet[13][-1]))
+    return rhymes

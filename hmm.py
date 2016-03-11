@@ -26,7 +26,7 @@ class HMM:
         self.B = np.zeros((self.numStates, self.numObs))
         self.I = np.zeros((self.numStates, 1))
 
-    def train(self, sequences, maxIter=1000, threshold=0.0001):
+    def train(self, sequences, maxIter=1000, threshold=0.00001):
         """
         Trains the hidden Markov model on an unlabeled dataset (unsupervised),
         using the Expectation-Maximization (EM) algorithm. Updates the
@@ -223,3 +223,31 @@ class HMM:
             sonnet.append(sentence)
             currState = np.random.choice(self.numStates, p=self.A[currState,:])
         return sonnet
+
+    def generateSonnetWithRhymes(self, rhymePairs, numSentences=14,
+                                 numWordsPerSentence=8):
+        lastWords = []
+        for s in xrange((numSentences-2) / 4):
+            rhymeIdx = np.random.choice(len(rhymePairs), 2)
+            lastWords += [rhymePairs[rhymeIdx[0]][0],
+                          rhymePairs[rhymeIdx[1]][0],
+                          rhymePairs[rhymeIdx[0]][1],
+                          rhymePairs[rhymeIdx[1]][1]]
+        rhymeIdx = np.random.choice(len(rhymePairs))
+        lastWords += [rhymePairs[rhymeIdx][0],
+                      rhymePairs[rhymeIdx][1]]
+
+        sonnet = []
+        for lastWord in lastWords:
+            sentence = [lastWord]
+            lastState = np.argmax(self.B[:, lastWord])
+            currState = np.random.choice(self.numStates,
+                                         p=self.A[lastState,:])
+            for w in xrange(numWordsPerSentence-1):
+                word = np.random.choice(self.numObs, p=self.B[currState,:])
+                sentence.append(word)
+                currState = np.random.choice(self.numStates,
+                                             p=self.A[currState,:])
+            sonnet.append(sentence)
+
+        return [sentence[::-1] for sentence in sonnet]

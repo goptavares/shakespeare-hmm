@@ -23,7 +23,7 @@ def main():
     tokens = util.getUniqueWords(sonnets)
     numObs = len(tokens)
 
-    numStates = [15, 20, 25, 30]
+    numStates = [4, 6, 8, 10]
     logLikelihoods = []
     for n in numStates:
         model = hmm.HMM(n, numObs)
@@ -36,7 +36,7 @@ def main():
                 for word in sentence:
                     tokenizedSentence.append(tokens.index(word.lower())) 
                 sentences.append(tokenizedSentence)
-        model.train(sentences, maxIter=3)
+        model.train(sentences, maxIter=80)
 
         # Calculate log-likelihood of validation dataset for the model.
         logLikelihood = 0
