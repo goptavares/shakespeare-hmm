@@ -117,3 +117,11 @@ def getRhymePairs(sonnets):
             rhymes.append((sonnet[9][-1], sonnet[11][-1]))
             rhymes.append((sonnet[12][-1], sonnet[13][-1]))
     return rhymes
+
+
+def getSentenceSyllCount(sentence):
+    h = Hyphenator('en_GB')
+    count = 0
+    for word in sentence:
+        count += max(len(h.syllables(unicode(word))), 1)
+    return count

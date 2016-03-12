@@ -12,7 +12,7 @@ import hmm
 import util
 
 
-def main():
+def validateModelWithArtificialDataset():
     sequences = []
     with open('./Example_1.txt', 'r') as f:
         linesSkipped = 2
@@ -37,5 +37,57 @@ def main():
     print model.B
     print model.I
 
-if __name__ == '__main__':
-    main()
+
+def validateModelWithShakespeareDataset():
+    # Load Shakespeare dataset.
+    sonnets = util.loadShakespeareSonnets()
+
+    # Split dataset into training and testing.
+    sonnetsTrain = sonnets[:120]
+    sonnetsTest = sonnets[120:]
+
+    tokens = util.getUniqueWords(sonnets)
+    numObs = len(tokens)
+
+    numStates = 8
+    model = hmm.HMM(numStates, numObs)
+
+    # Train model on tokenized training dataset.
+    sentences = []
+    for sonnet in sonnetsTrain:
+        for sentence in sonnet:
+            tokenizedSentence = []
+            for word in sentence:
+                tokenizedSentence.append(tokens.index(word.lower())) 
+            sentences.append(tokenizedSentence)
+
+    for i in xrange(30):
+        if i == 0:
+            model.train(sentences, maxIter=1, randomInit=True)
+        else:
+            model.train(sentences, maxIter=1, randomInit=False)
+
+        # Calculate log-likelihood of training dataset for the current model.
+        NLL = 0
+        for sonnet in sonnetsTrain:
+            for sentence in sonnet:
+                tokenizedSentence = []
+                for word in sentence:
+                    tokenizedSentence.append(tokens.index(word.lower()))
+                alphas = model.forward(tokenizedSentence)
+                if np.sum(alphas[:,-1]) != 0:
+                    NLL -= np.log(np.sum(alphas[:,-1]))
+        print("Iteration: " + str(i))
+        print("NLL training: " + str(NLL))
+
+        # Calculate log-likelihood of validation dataset for the current model.
+        NLL = 0
+        for sonnet in sonnetsTest:
+            for sentence in sonnet:
+                tokenizedSentence = []
+                for word in sentence:
+                    tokenizedSentence.append(tokens.index(word.lower()))
+                alphas = model.forward(tokenizedSentence)
+                if np.sum(alphas[:,-1]) != 0:
+                    NLL -= np.log(np.sum(alphas[:,-1]))
+        print("NLL test: " + str(NLL))

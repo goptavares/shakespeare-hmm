@@ -51,7 +51,7 @@ def main():
         logLikelihoods.append(logLikelihood)
         print("States: " + str(n) + ", LL: " + str(logLikelihood))
 
-    # Get optimal number of states and create best model.
+    # Get optimal number of states.
     print("Optimal number of states: " +
           str(numStates[np.argmax(logLikelihoods)]))
 

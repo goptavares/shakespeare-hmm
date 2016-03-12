@@ -1,13 +1,12 @@
 #!/usr/bin/python
 
 """
-hmm.py
+hmm_end_state.py
 Authors: Gabriela Tavares,      gtavares@caltech.edu
          Juri Minxha,           jminxha@caltech.edu
 """
 import copy
 import numpy as np
-import util
 
 
 class HMM:
@@ -21,8 +20,10 @@ class HMM:
           numStates: number of possible states.
           numObs: number of possible observations.
         """
-        self.numStates = numStates
-        self.numObs = numObs
+        self.numStates = numStates + 1
+        self.numObs = numObs + 1
+        self.endToken = self.numObs - 1
+        self.endState = self.numStates - 1
         self.A = np.zeros((self.numStates, self.numStates))
         self.B = np.zeros((self.numStates, self.numObs))
         self.I = np.zeros((self.numStates, 1))
@@ -42,17 +43,28 @@ class HMM:
         # Randomly initialize A, B and I matrices.
         if randomInit:
             self.A = np.random.uniform(0, 1, (self.numStates, self.numStates))
+            self.A[-1,:] = 0
             for i in xrange(self.numStates):
-                self.A[i,:] = self.A[i,:] / float(sum(self.A[i,:]))
+                if sum(self.A[i,:]) != 0:
+                    self.A[i,:] = self.A[i,:] / float(sum(self.A[i,:]))
             self.B = np.random.uniform(0, 1, (self.numStates, self.numObs))
+            self.B[:,-1] = 0
+            self.B[-1,:] = 0
+            self.B[-1,-1] = 1
             for i in xrange(self.numStates):
                 self.B[i,:] = self.B[i,:] / float(sum(self.B[i,:]))
             self.I = np.random.uniform(0, 1, (self.numStates, 1))
+            self.I[-1] = 0
             self.I[:] = self.I[:] / float(sum(self.I[:]))
+
+        # Append end token to every sequence.
+        for seq in sequences:
+            seq.append(self.endToken)
 
         # EM algorithm.
         for it in xrange(maxIter):
             print("Iteration " + str(it) + "...")
+
             gammas = []
             xis = []
             # Iterate over the data points.
@@ -84,7 +96,8 @@ class HMM:
                         for t in xrange(len(seq) - 1):
                             sumNum += xis[n][t][i,j]
                             sumDen += gammas[n][t][i]
-                    self.A[i,j] = float(sumNum) / float(sumDen)
+                    if sumDen != 0:
+                        self.A[i,j] = float(sumNum) / float(sumDen)
 
             # Use marginal probabilities to update B matrix.
             for i in xrange(self.numStates):
@@ -191,18 +204,18 @@ class HMM:
                                    float(den))
         return xis
 
-    def generateSonnetFromWords(self, numSentences, numWordsPerSentence):
+    def generateSonnetFromWords(self, numSentences):
         """
         Args:
           numSentences: number of sentences in the sonnet to be generated.
-          numWordsPerSentence: number of words in each sentence in the sonnet to
-              be generated.
         """
         sonnet = []
         for s in xrange(numSentences):
             sentence = []
             currState = np.random.choice(self.numStates, p=self.I[:,0])
-            for w in xrange(numWordsPerSentence):
+            while True:
+                if currState == self.endState:
+                    break
                 word = np.random.choice(self.numObs, p=self.B[currState,:])
                 sentence.append(word)
                 currState = np.random.choice(self.numStates,
@@ -211,66 +224,53 @@ class HMM:
         return sonnet
 
     def generateSonnetFromSyllables(self, numSentences, numWordsPerSentence,
-                                    numSyllablesPerWord):
+                                    validWords=None, tokens=None):
         sonnet = []
         for s in xrange(numSentences):
             sentence = []
-            for w in xrange(numWordsPerSentence):
+            w = 0
+            while w < numWordsPerSentence:
                 word = []
                 currState = np.random.choice(self.numStates, p=self.I[:,0])
-                for sy in xrange(numSyllablesPerWord):
+                while True:
+                    if currState == self.endState:
+                        break
                     syllable = np.random.choice(self.numObs,
                                                 p=self.B[currState,:])
                     word.append(syllable)
                     currState = np.random.choice(self.numStates,
                                                  p=self.A[currState,:])
-                sentence.append(word)
+                if validWords:
+                    untokenizedWord = ''
+                    for syll in word:
+                        untokenizedWord += str(tokens[syll])
+                    if untokenizedWord in validWords:
+                        sentence.append(word)
+                        w += 1
+                    else:
+                        continue
+                else:
+                    sentence.append(word)
+                    w += 1
             sonnet.append(sentence)
         return sonnet
 
-    def generateSonnetFromSentences(self, numSentences):
+    def generateSonnetFromSentences(self):
         """
         Args:
           numSentences: number of sentences in the sonnet to be generated.
         """
         sonnet = []
         currState = np.random.choice(self.numStates, p=self.I[:,0])
-        for s in xrange(numSentences):
+        while True:
+            if currState == self.endState:
+                break
             sentence = np.random.choice(self.numObs, p=self.B[currState,:])
             sonnet.append(sentence)
             currState = np.random.choice(self.numStates, p=self.A[currState,:])
         return sonnet
 
-    def generateSonnetWithRhyme(self, rhymePairs, numSentences=14,
-                                numWordsPerSentence=8):
-        lastWords = []
-        for s in xrange((numSentences-2) / 4):
-            rhymeIdx = np.random.choice(len(rhymePairs), 2)
-            lastWords += [rhymePairs[rhymeIdx[0]][0],
-                          rhymePairs[rhymeIdx[1]][0],
-                          rhymePairs[rhymeIdx[0]][1],
-                          rhymePairs[rhymeIdx[1]][1]]
-        rhymeIdx = np.random.choice(len(rhymePairs))
-        lastWords += [rhymePairs[rhymeIdx][0],
-                      rhymePairs[rhymeIdx][1]]
-
-        sonnet = []
-        for lastWord in lastWords:
-            sentence = [lastWord]
-            lastState = np.argmax(self.B[:, lastWord])
-            currState = np.random.choice(self.numStates,
-                                         p=self.A[lastState,:])
-            for w in xrange(numWordsPerSentence-1):
-                word = np.random.choice(self.numObs, p=self.B[currState,:])
-                sentence.append(word)
-                currState = np.random.choice(self.numStates,
-                                             p=self.A[currState,:])
-            sonnet.append(sentence)
-
-        return [sentence[::-1] for sentence in sonnet]
-
-    def generateSonnetWithRhymeAndMeter(self, rhymePairs, numSentences=14,
-                                        numSyllablesPerSentence=10):
+    def generateSonnetWithRhymes(self, rhymePairs, numSentences=14):
         lastWords = []
         for s in xrange((numSentences-2) / 4):
             rhymeIdx = np.random.choice(len(rhymePairs), 2)
@@ -289,12 +289,8 @@ class HMM:
             currState = np.random.choice(self.numStates,
                                          p=self.A[lastState,:])
             while True:
-                if (util.getSentenceSyllCount(sentence) ==
-                    numSyllablesPerSentence):
+                if currState == self.endState:
                     break
-                elif (util.getSentenceSyllCount(sentence) >
-                    numSyllablesPerSentence):
-                    sentence.pop()
                 word = np.random.choice(self.numObs, p=self.B[currState,:])
                 sentence.append(word)
                 currState = np.random.choice(self.numStates,

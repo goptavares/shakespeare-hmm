@@ -17,7 +17,7 @@ def main():
     sonnets = util.loadShakespeareSonnets()
     tokens = util.getUniqueWords(sonnets)
     numObs = len(tokens)
-    numStates = 30
+    numStates = 6
     model = hmm.HMM(numStates, numObs)
 
     # Train model on tokenized dataset.
@@ -28,7 +28,7 @@ def main():
             for word in sentence:
                 tokenizedSentence.append(tokens.index(word.lower())) 
             sentences.append(tokenizedSentence)
-    model.train(sentences)
+    model.train(sentences, maxIter=10)
 
     # Generate artificial sonnet and detokenize it.
     artificialSonnet = model.generateSonnetFromWords(numSentences=14,
