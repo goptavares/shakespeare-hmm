@@ -17,7 +17,7 @@ def main():
     sonnets = util.loadShakespeareSonnets()
     tokens = util.getUniqueWords(sonnets)
     numObs = len(tokens)
-    numStates = 8
+    numStates = 6
     model = hmm.HMM(numStates, numObs)
 
     # Train model on tokenized dataset, with each sentence backwards.
@@ -28,7 +28,7 @@ def main():
             for word in sentence:
                 tokenizedSentence.append(tokens.index(word.lower()))
             sentences.append(tokenizedSentence[::-1])
-    model.train(sentences, maxIter=100)
+    model.train(sentences, maxIter=20)
 
     # Get rhyme pairs.
     rhymes = util.getRhymePairs(sonnets)
@@ -38,9 +38,8 @@ def main():
                                 tokens.index(w2.lower())))
 
     # Generate artificial sonnet with rhymes and detokenize it.
-    artificialSonnet = model.generateSonnetWithRhymes(tokenizedRhymes,
-                                                      numSentences=14,
-                                                      numWordsPerSentence=8)
+    artificialSonnet = model.generateSonnetWithRhymeAndMeter(
+        tokenizedRhymes, numSentences=14)
     detokenizedSonnet = []
     for sentence in artificialSonnet:
         detokenizedSentence = []
