@@ -5,6 +5,7 @@ util.py
 Authors: Gabriela Tavares,      gtavares@caltech.edu
          Juri Minxha,           jminxha@caltech.edu
 """
+import codecs
 import datetime
 import os
 import re
@@ -61,6 +62,50 @@ def loadSpenserSonnets():
     return sonnets
 
 
+def loadMoraesPoems():
+    poems = []
+    with codecs.open('./moraes.txt', 'r', encoding='utf-8') as f:
+        poem = []
+        poemToAppend = False
+        for line in f:
+            if line.strip().split(' ')[-1].isdigit():
+                poemToAppend = True
+                continue
+            if line == '\n':
+                if poemToAppend:
+                    poems.append(poem)
+                    poem = []
+                    poemToAppend = False
+                continue
+            poem.append([re.sub(r'[,.:;!?]', '', w) for
+                         w in line.strip().split(' ')])
+        poems.append(poem)
+    f.close()
+    return poems
+
+
+def loadKadarePoems():
+    poems = []
+    with codecs.open('./kadare.txt', 'r', encoding='utf-8') as f:
+        poem = []
+        poemToAppend = False
+        for line in f:
+            if line.strip().split(' ')[-1].isdigit():
+                poemToAppend = True
+                continue
+            if line == '\n':
+                if poemToAppend:
+                    poems.append(poem)
+                    poem = []
+                    poemToAppend = False
+                continue
+            poem.append([re.sub(r'[,.:;!?]', '', w) for
+                         w in line.strip().split(' ')])
+        poems.append(poem)
+    f.close()
+    return poems
+
+
 def getUniqueWords(sonnets):
     s = set()
     for sonnet in sonnets:
@@ -92,19 +137,6 @@ def getUniqueSentences(sonnets):
     return s
 
 
-def writeSonnetToTxt(sonnet):
-    if not os.path.isdir(os.getcwd() + '/sonnets/'):
-        os.mkdir(os.getcwd() + '/sonnets/')
-    fileName = os.getcwd() + '/sonnets/' + str(datetime.datetime.now())
-
-    with open(fileName, 'w') as f:
-        for line in sonnet:
-            for word in line:
-                f.write(word + ' ')
-            f.write('\n')
-    f.close()
-
-
 def getRhymePairs(sonnets):
     rhymes = []
     for sonnet in sonnets:
@@ -125,3 +157,16 @@ def getSentenceSyllCount(sentence):
     for word in sentence:
         count += max(len(h.syllables(unicode(word))), 1)
     return count
+
+
+def writeSonnetToTxt(sonnet):
+    if not os.path.isdir(os.getcwd() + '/sonnets/'):
+        os.mkdir(os.getcwd() + '/sonnets/')
+    fileName = os.getcwd() + '/sonnets/' + str(datetime.datetime.now())
+
+    with codecs.open(fileName, 'w', encoding='utf-8') as f:
+        for line in sonnet:
+            for word in line:
+                f.write(word + ' ')
+            f.write('\n')
+    f.close()
