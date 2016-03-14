@@ -44,6 +44,9 @@ def main():
     for sentence in artificialSonnet:
         detokenizedSentence = []
         for i, word in zip(xrange(len(sentence)), sentence):
+            if tokens[word] == 'i':
+                detokenizedSentence.append('I')
+                continue
             if i == 0:
                 detokenizedSentence.append(string.capwords(tokens[word]))
             else:
