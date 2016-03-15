@@ -7,6 +7,7 @@ Authors: Gabriela Tavares,      gtavares@caltech.edu
 """
 import numpy as np
 import string
+import matplotlib.pyplot as plt
 
 import hmm
 import util
@@ -61,7 +62,9 @@ def validateModelWithShakespeareDataset():
                 tokenizedSentence.append(tokens.index(word.lower())) 
             sentences.append(tokenizedSentence)
 
-    for i in xrange(30):
+    trainNLL = []
+    numIterations = 30
+    for i in xrange(numIterations):
         if i == 0:
             model.train(sentences, maxIter=1, randomInit=True)
         else:
@@ -79,6 +82,7 @@ def validateModelWithShakespeareDataset():
                     NLL -= np.log(np.sum(alphas[:,-1]))
         print("Iteration: " + str(i))
         print("NLL training: " + str(NLL))
+        trainNLL.append(NLL)
 
         # Calculate log-likelihood of validation dataset for the current model.
         NLL = 0
@@ -91,3 +95,10 @@ def validateModelWithShakespeareDataset():
                 if np.sum(alphas[:,-1]) != 0:
                     NLL -= np.log(np.sum(alphas[:,-1]))
         print("NLL test: " + str(NLL))
+
+    plt.figure()
+    plt.plot(range(1, numIterations + 1), trainNLL)
+    plt.xlabel('Algorithm iteration')
+    plt.ylabel('Negative log likelihood')
+    plt.title('EM algorithm for HMM')
+    plt.show()
